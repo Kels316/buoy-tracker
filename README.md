@@ -172,6 +172,58 @@ Or import the channel URL generated from the Meshtastic app.
 
 ---
 
+## 9. Receiver node setup
+
+The receiver runs **stock Meshtastic firmware** — no custom build needed. It just needs the matching channel config.
+
+### What must match exactly
+
+| Setting | Value |
+|---|---|
+| Channel name | `TRACKER` |
+| PSK | The 32 bytes set in `tracker_channel.h` |
+| Channel slot | 0 (primary) |
+
+### Step 1 — Convert your PSK to base64
+
+Run this on your Mac, substituting your actual key bytes if you changed the defaults:
+
+```python
+python3 -c "
+import base64
+key = bytes([
+    0x4a, 0x3f, 0x8c, 0x21, 0xd7, 0x55, 0xb2, 0x09,
+    0xe1, 0x7a, 0x44, 0xfc, 0x30, 0x8e, 0x6b, 0xd3,
+    0x92, 0x1c, 0x5f, 0xa8, 0x77, 0x03, 0xe6, 0x4d,
+    0xbb, 0x29, 0x10, 0x58, 0xc4, 0x9d, 0x6e, 0xf1
+])
+print(base64.b64encode(key).decode())
+"
+```
+
+### Step 2a — Apply via Meshtastic CLI (receiver connected by USB)
+
+```bash
+meshtastic --ch-index 0 --ch-set name TRACKER --ch-set psk base64:<your-base64-key> --ch-set-enabled true
+```
+
+### Step 2b — Apply via phone app
+
+1. Open Meshtastic app → connect to receiver node
+2. Channel Config → Channel 0
+3. Set name to `TRACKER`
+4. Set PSK to the same key
+5. Save
+
+### What you'll see
+
+Position packets from the tracker appear as a node on the map in the Meshtastic app, including GPS coordinates, altitude, satellite count, and compass heading (`ground_track` field). Any node or app on the same channel decodes them automatically — no extra software needed.
+
+> **Note:** If you changed the default PSK bytes in `tracker_channel.h` before building, use your updated bytes when generating the base64 string — not the placeholder defaults above.
+
+
+---
+
 ## Troubleshooting
 
 | Symptom | Fix |
