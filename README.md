@@ -14,6 +14,7 @@
 | Bluetooth | Disabled (saves ~60 KB flash) |
 | Power LED | GPIO 2 — on solid when running |
 | TX LED | GPIO 4 — flashes 200 ms on each packet |
+| Recovery strobe | GPIO 13 — 3 blinks/30s (lock), 3 blinks/5s (no lock) |
 
 ---
 
@@ -141,6 +142,17 @@ GPIO 4 ──[220Ω]── LED anode (+)
 
 Use standard 3mm or 5mm LEDs. 220Ω is correct for 3.3V logic.
 
+### Recovery strobe circuit (GPIO 13)
+
+```
+T-Beam 5V ── LED(+) ── LED(–) ──[56Ω]── 2N7000 Drain
+2N7000 Source ─────────────────────────── GND
+GPIO 13 ──[100Ω]───────────────────────── 2N7000 Gate
+2N7000 Gate ──[10kΩ]───────────────────── GND
+```
+
+The 10kΩ gate pulldown is important — without it the GPIO floats at boot and the strobe may fire unexpectedly.
+
 ### Magnetic declination
 
 Open `TrackerModule.h` and set `MAG_DECLINATION` for your deployment location.
@@ -170,3 +182,5 @@ Or import the channel URL generated from the Meshtastic app.
 | "no GPS lock" in logs | Give the T-Beam a clear sky view; cold fix can take 2–5 min |
 | Packets not received | Confirm both nodes use identical PSK bytes |
 | Build fails on TrackerModule | Ensure both .h and .cpp are in `src/modules/` |
+| Strobe not flashing | Check MOSFET wiring on GPIO 13; verify gate pulldown resistor is in place |
+| Strobe always on | Missing 10kΩ gate pulldown — GPIO floats high at boot without it |
