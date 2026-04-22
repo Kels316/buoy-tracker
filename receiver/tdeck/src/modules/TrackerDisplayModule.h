@@ -76,7 +76,6 @@ class TrackerDisplayModule : public SinglePortModule
     bool wantUIFrame() override { return true; }
     void drawFrame(OLEDDisplay *display, OLEDDisplayUiState *state,
                    int16_t x, int16_t y) override;
-    int getNumExtraFrames() override { return 2; }
 
   protected:
     ProcessMessage handleReceived(const meshtastic_MeshPacket &mp) override;

@@ -25,7 +25,7 @@ TrackerDisplayModule::TrackerDisplayModule()
 // ── Packet handler ────────────────────────────────────────────
 ProcessMessage TrackerDisplayModule::handleReceived(const meshtastic_MeshPacket &mp)
 {
-    if (mp.channel != 0) return ProcessMessage::CONTINUE;
+    if (mp.channel != 1) return ProcessMessage::CONTINUE;
 
     meshtastic_Position pos = meshtastic_Position_init_default;
     pb_istream_t stream = pb_istream_from_buffer(
