@@ -33,8 +33,6 @@ TrackerModule::TrackerModule()
     digitalWrite(TX_LED_PIN, LOW);
 
     // ── Initialise I2C for QMC5883L ─────────────────────────────────
-    Wire.begin(21, 22); // SDA=21, SCL=22
-
     // Soft-reset the QMC5883L
     Wire.beginTransmission(QMC_ADDR);
     Wire.write(QMC_REG_RESET);
@@ -115,7 +113,7 @@ float TrackerModule::readHeadingDeg()
 // ── Position packet ──────────────────────────────────────────────────
 void TrackerModule::sendPosition()
 {
-    if (!gps || !gps->hasLock()) {
+    if (localPosition.latitude_i == 0 && localPosition.longitude_i == 0) {
         LOG_WARN("TrackerModule: no GPS lock, skipping send\n");
         return;
     }
@@ -128,12 +126,12 @@ void TrackerModule::sendPosition()
 
     // Build position payload
     meshtastic_Position pos = meshtastic_Position_init_default;
-    pos.latitude_i          = gps->latitude;
-    pos.longitude_i         = gps->longitude;
-    pos.altitude            = gps->altitude;
-    pos.time                = gps->getTime();
-    pos.PDOP                = gps->dop;
-    pos.sats_in_view        = gps->satellites;
+    pos.latitude_i          = localPosition.latitude_i;
+    pos.longitude_i         = localPosition.longitude_i;
+    pos.altitude            = localPosition.altitude;
+    pos.time                = localPosition.time;
+    pos.PDOP                = localPosition.PDOP;
+    pos.sats_in_view        = localPosition.sats_in_view;
 
     // Compass heading → ground_track field (0–359 degrees * 100 for fixed-point)
     float heading = readHeadingDeg();
@@ -155,10 +153,10 @@ void TrackerModule::sendPosition()
 
     // Broadcast on private channel 0
     p->to       = NODENUM_BROADCAST;
-    p->channel  = 0;
+    p->channel  = 1;
     p->want_ack = false;
 
-    service.sendToMesh(p, RX_SRC_LOCAL, true);
+    service->sendToMesh(p, RX_SRC_LOCAL, true);
 
     LOG_INFO("TrackerModule: packet sent (lat=%d, lon=%d, track=%u)\n",
              pos.latitude_i, pos.longitude_i, pos.ground_track);

@@ -1,11 +1,10 @@
 #pragma once
-
 /**
  * tracker_channel.h
- * 
+ *
  * Bakes a private channel + PSK into the firmware at compile time.
- * The setupTrackerChannel() function should be called once from setup()
- * BEFORE the mesh service starts.
+ * Also sets LoRa region, GPS pins, and device role on first boot.
+ * Call setupTrackerChannel() once from setup() BEFORE service->init().
  *
  * HOW TO CHANGE YOUR KEY:
  *   1. Generate a random 32-byte key (e.g. `openssl rand -base64 32`)
@@ -14,15 +13,16 @@
  */
 
 #include "NodeDB.h"
+#include "configuration.h"
 #include "mesh/generated/meshtastic/channel.pb.h"
+#include "mesh/generated/meshtastic/config.pb.h"
 #include <string.h>
 
 // -------------------------------------------------------------------
 // YOUR PRIVATE CHANNEL SETTINGS — edit these before building
 // -------------------------------------------------------------------
 
-// Channel name (max 11 chars)
-#define TRACKER_CHANNEL_NAME  "TRACKER"
+#define TRACKER_CHANNEL_NAME "TRACKER"
 
 // 256-bit (32-byte) pre-shared key
 // Replace with your own key — every node must share this exact key.
@@ -35,26 +35,48 @@ static const uint8_t TRACKER_PSK[32] = {
 
 // -------------------------------------------------------------------
 
-inline void setupTrackerChannel()
+void setupTrackerChannel()
 {
+    if (strcmp(channels.getByIndex(1).settings.name, TRACKER_CHANNEL_NAME) == 0) {
+        LOG_INFO("setupTrackerChannel: already configured, skipping\n");
+        return;
+    }
+    LOG_INFO("setupTrackerChannel: configuring TRACKER node\n");
+
+    // ── Channel ────────────────────────────────────────────────────
     meshtastic_ChannelSettings cs = meshtastic_ChannelSettings_init_default;
-
-    // Name
     strncpy(cs.name, TRACKER_CHANNEL_NAME, sizeof(cs.name) - 1);
-
-    // PSK
     cs.psk.size = sizeof(TRACKER_PSK);
     memcpy(cs.psk.bytes, TRACKER_PSK, sizeof(TRACKER_PSK));
 
-    // Modem preset — use LongFast for range; change to LongSlow for max range
-    cs.modem_preset = meshtastic_ChannelSettings_ModemPreset_LONG_FAST;
-
-    // Write to channel slot 0 and mark as PRIMARY
-    meshtastic_Channel ch  = meshtastic_Channel_init_default;
-    ch.settings            = cs;
-    ch.role                = meshtastic_Channel_Role_PRIMARY;
-    ch.index               = 0;
-
+    meshtastic_Channel ch = meshtastic_Channel_init_default;
+    ch.settings           = cs;
+    ch.role               = meshtastic_Channel_Role_SECONDARY;
+    ch.index              = 1;
     channels.setChannel(ch);
-    channels.onConfigChanged(); // persist to flash
+    channels.onConfigChanged(); // persist channel to flash
+
+    // ── LoRa region + modem ────────────────────────────────────────
+    config.lora.region       = meshtastic_Config_LoRaConfig_RegionCode_ANZ;
+    config.lora.use_preset   = true;
+    config.lora.modem_preset = meshtastic_Config_LoRaConfig_ModemPreset_LONG_FAST;
+    config.lora.tx_enabled   = true;
+    config.lora.tx_power     = 30;
+
+    // ── GPS ────────────────────────────────────────────────────────
+    config.position.gps_mode = meshtastic_Config_PositionConfig_GpsMode_ENABLED;
+    config.position.rx_gpio  = 36;
+    config.position.tx_gpio  = 25;
+    config.position.position_broadcast_secs = 3600; // our module handles 30s sends
+
+    // ── Device ─────────────────────────────────────────────────────
+    config.device.role = meshtastic_Config_DeviceConfig_Role_TRACKER;
+
+    // ── Bluetooth — fixed PIN so no screen needed ──────────────────
+    config.bluetooth.enabled   = true;
+    config.bluetooth.mode      = meshtastic_Config_BluetoothConfig_PairingMode_FIXED_PIN;
+    config.bluetooth.fixed_pin = 123456;
+
+    nodeDB->saveToDisk(SEGMENT_CONFIG);
+    LOG_INFO("setupTrackerChannel: config saved\n");
 }
