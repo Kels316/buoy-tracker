@@ -126,8 +126,11 @@ void TrackerModule::sendPosition()
 
     // Build position payload
     meshtastic_Position pos = meshtastic_Position_init_default;
+    pos.has_latitude_i      = true;
     pos.latitude_i          = localPosition.latitude_i;
+    pos.has_longitude_i     = true;
     pos.longitude_i         = localPosition.longitude_i;
+    pos.has_altitude        = true;
     pos.altitude            = localPosition.altitude;
     pos.time                = localPosition.time;
     pos.PDOP                = localPosition.PDOP;

@@ -1,6 +1,6 @@
 #pragma once
 #include "SinglePortModule.h"
-#include "OSTimer.h"
+#include "concurrency/OSThread.h"
 #include <Wire.h>
 
 /**
