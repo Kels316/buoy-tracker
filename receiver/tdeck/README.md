@@ -20,7 +20,13 @@ functionality is preserved.
 - Falls back to north-up if T-Deck has no GPS fix
 
 ### Page 2 — Data view
-Full numeric readout: lat, lon, altitude, heading, satellites, PDOP, RSSI, time since last packet.
+Full numeric readout: lat, lon, altitude, speed (knots), COG (degrees true), heading, satellites, PDOP, RSSI, packet count, time since last packet.
+
+Speed and COG are calculated by comparing the first packet ever received (anchor) against the latest packet. This gives net set and drift — correct for SAR use.
+
+- First packet: speed and COG show `---` (anchor set, nothing to compare yet)
+- 2+ packets, buoy moved less than 15 m from anchor: speed shows `0.0kn`, COG shows `000°T` — this filters out GPS jitter
+- 2+ packets, buoy moved more than 15 m from anchor: actual speed and COG are shown
 
 ---
 
