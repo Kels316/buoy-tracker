@@ -2,7 +2,7 @@
 
 Adds two extra screen pages to the LilyGo T-Deck for recovering
 the tbeam-tracker GPS buoy at sea. All standard T-Deck Meshtastic
-functionality is preserved.
+functionality is preserved (except access to BaseUI as noted below).
 
 ---
 
