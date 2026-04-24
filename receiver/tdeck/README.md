@@ -145,6 +145,12 @@ The two new pages will appear in the T-Deck screen cycle.
 
 ---
 
+## Known limitations
+
+The base UI (non-MUI) is not accessible with this firmware build. Attempting to switch to it will put the device into Bluetooth programming mode. All tracker screens are accessed via the MUI using the trackball — this is the intended navigation path.
+
+---
+
 ## Troubleshooting
 
 | Symptom | Fix |
