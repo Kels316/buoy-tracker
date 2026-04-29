@@ -23,6 +23,7 @@ struct TrackerData {
     uint32_t last_rx_ms   = 0;
     int8_t   rssi         = 0;
     uint32_t node_id      = 0;
+    uint32_t battery_pct  = 0;     // 0-100, or 101 = USB/charging
     bool     valid        = false;
     float    speed_kn     = 0.0f;
     float    cog_deg      = 0.0f;

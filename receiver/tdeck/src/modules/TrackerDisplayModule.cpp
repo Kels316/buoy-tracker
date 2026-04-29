@@ -97,6 +97,11 @@ ProcessMessage TrackerRadarModule::handleReceived(const meshtastic_MeshPacket &m
     g_tracker.node_id      = mp.from;
     g_tracker.valid        = true;
 
+    // Pull battery level from NodeDB (populated by T-Beam's telemetry packets)
+    meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(mp.from);
+    if (node && node->has_device_metrics)
+        g_tracker.battery_pct = node->device_metrics.battery_level;
+
     updateHistory(pos.latitude_i, pos.longitude_i, millis());
 
     LOG_INFO("TrackerRadarModule: lat=%d lon=%d spd=%.2fkn cog=%.0f win=%u/20\n",
@@ -385,7 +390,7 @@ void TrackerScreens::buildScreens()
     lblAlt  = makeLabel(ds, CL, RY + 2*RH, 155, RH, "Alt --",    false);
     lblSpd  = makeLabel(ds, CL, RY + 3*RH, 155, RH, "Spd --",    false);
     lblCog  = makeLabel(ds, CL, RY + 4*RH, 155, RH, "COG --",    false);
-    lblHdg  = makeLabel(ds, CR, RY + 0*RH, 155, RH, "Hdg --",    false);
+    lblHdg  = makeLabel(ds, CR, RY + 0*RH, 155, RH, "Bat --",    false);
     lblSats = makeLabel(ds, CR, RY + 1*RH, 155, RH, "Sats --",   false);
     lblPdop = makeLabel(ds, CR, RY + 2*RH, 155, RH, "PDOP --",   false);
     lblRssi = makeLabel(ds, CR, RY + 3*RH, 155, RH, "RSSI --",   false);
@@ -532,7 +537,12 @@ void TrackerScreens::redrawData()
     if (g_tracker.motion_valid) snprintf(buf, sizeof(buf), "COG %03.0f\xC2\xB0T", g_tracker.cog_deg);
     else                        snprintf(buf, sizeof(buf), "COG ---");
     lv_label_set_text((lv_obj_t*)lblCog, buf);
-    snprintf(buf, sizeof(buf), "Hdg %03.0f\xC2\xB0M", g_tracker.ground_track / 100.0f);
+    if (g_tracker.battery_pct == 101)
+        snprintf(buf, sizeof(buf), "Bat USB");
+    else if (g_tracker.battery_pct > 0)
+        snprintf(buf, sizeof(buf), "Bat %u%%", (unsigned)g_tracker.battery_pct);
+    else
+        snprintf(buf, sizeof(buf), "Bat --");
     lv_label_set_text((lv_obj_t*)lblHdg, buf);
     snprintf(buf, sizeof(buf), "Sats %u",  (unsigned)g_tracker.sats_in_view);
     lv_label_set_text((lv_obj_t*)lblSats, buf);

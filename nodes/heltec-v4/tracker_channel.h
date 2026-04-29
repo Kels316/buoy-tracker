@@ -1,6 +1,6 @@
 #pragma once
 /**
- * tracker_channel.h
+ * tracker_channel.h  —  Heltec WiFi LoRa 32 V4 variant
  *
  * Bakes a private channel + PSK into the firmware at compile time.
  * Also sets LoRa region, GPS pins, and device role on first boot.
@@ -10,6 +10,12 @@
  *   1. Generate a random 32-byte key (e.g. `openssl rand -base64 32`)
  *   2. Convert each byte to 0x?? hex and replace TRACKER_PSK below.
  *   3. Rebuild and reflash all nodes that need to communicate.
+ *
+ * PIN NOTES (Heltec V4 — ESP32-S3):
+ *   GPS RX (board side) = GPIO 38  (GNSS_RX on the SH1.25-8P connector)
+ *   GPS TX (board side) = GPIO 39  (GNSS_TX on the SH1.25-8P connector)
+ *   DO NOT use GPIO 36 for GPS — it is VEXT_ENABLE (external power control).
+ *   DO NOT use GPIO 13 for strobe — it is LORA_BUSY (SX1262 DIO2).
  */
 
 #include "NodeDB.h"
@@ -41,7 +47,7 @@ void setupTrackerChannel()
         LOG_INFO("setupTrackerChannel: already configured, skipping\n");
         return;
     }
-    LOG_INFO("setupTrackerChannel: configuring TRACKER node\n");
+    LOG_INFO("setupTrackerChannel: configuring TRACKER node (Heltec V4)\n");
 
     // ── Channel ────────────────────────────────────────────────────
     meshtastic_ChannelSettings cs = meshtastic_ChannelSettings_init_default;
@@ -71,9 +77,13 @@ void setupTrackerChannel()
     config.lora.tx_power     = 30;
 
     // ── GPS ────────────────────────────────────────────────────────
+    // Heltec V4 dedicated GNSS connector (SH1.25-8P):
+    //   GPIO 38 = GNSS_RX  (serial data into the ESP32-S3)
+    //   GPIO 39 = GNSS_TX  (serial data out to the GPS module)
+    // Note: GPIO 36 is VEXT_ENABLE — do not use for GPS.
     config.position.gps_mode = meshtastic_Config_PositionConfig_GpsMode_ENABLED;
-    config.position.rx_gpio  = 36;
-    config.position.tx_gpio  = 25;
+    config.position.rx_gpio  = 38;
+    config.position.tx_gpio  = 39;
     config.position.position_broadcast_secs = 3600; // our module handles 30s sends
 
     // ── Device ─────────────────────────────────────────────────────
@@ -85,7 +95,7 @@ void setupTrackerChannel()
     config.bluetooth.fixed_pin = 123456;
 
     // ── Telemetry — send battery level every 5 minutes ────────────
-    moduleConfig.telemetry.device_update_interval  = 300;
+    moduleConfig.telemetry.device_update_interval   = 300;
     moduleConfig.telemetry.device_telemetry_enabled = true;
     nodeDB->saveToDisk(SEGMENT_MODULE_CONFIG);
 
